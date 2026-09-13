@@ -1,4 +1,5 @@
 pyproject.toml
+api/
 Dockerfile
 render.yaml
 menstrual.db
@@ -7,3 +8,5 @@ mobile/.expo
 tests/
 .pytest_cache
 __pycache__
+app/
+main.py
