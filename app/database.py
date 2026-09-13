@@ -25,6 +25,7 @@ class DatabaseWrapper:
         else:
             conn = sqlite3.connect("menstrual.db", timeout=30.0)
             conn.execute("PRAGMA foreign_keys = ON")
+            conn.execute("PRAGMA busy_timeout = 30000")
             return conn
 
     def _convert_sql(self, query: str) -> str:
@@ -229,18 +230,20 @@ def get_user_by_id(user_id):
 
 def save_user_period_date(user_id, start_date):
     conn = _connect()
-    cursor = conn.cursor()
-    if db.is_postgres():
-        query = "INSERT INTO periods (user_id, start_date) VALUES (%s, %s) ON CONFLICT (user_id, start_date) DO NOTHING"
-        cursor.execute(query, (user_id, start_date))
-        inserted = cursor.rowcount == 1
-    else:
-        query = "INSERT OR IGNORE INTO periods (user_id, start_date) VALUES (?, ?)"
-        cursor.execute(query, (user_id, start_date))
-        inserted = cursor.rowcount == 1
-    conn.commit()
-    conn.close()
-    return inserted
+    try:
+        cursor = conn.cursor()
+        if db.is_postgres():
+            query = "INSERT INTO periods (user_id, start_date) VALUES (%s, %s) ON CONFLICT (user_id, start_date) DO NOTHING"
+            cursor.execute(query, (user_id, start_date))
+            inserted = cursor.rowcount == 1
+        else:
+            query = "INSERT OR IGNORE INTO periods (user_id, start_date) VALUES (?, ?)"
+            cursor.execute(query, (user_id, start_date))
+            inserted = cursor.rowcount == 1
+        conn.commit()
+        return inserted
+    finally:
+        conn.close()
 
 
 def get_user_period_dates(user_id):
