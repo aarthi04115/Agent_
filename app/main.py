@@ -1,18 +1,18 @@
 from datetime import datetime
 from app.api import app
 
-from database import (
+from app.database import (
     create_database,
     save_period_date,
     get_period_dates
 )
 
-from cycle import (
+from app.cycle import (
     calculate_average_cycle,
     predict_next_period
 )
 
-from reminder import reminder
+from app.reminder import reminder
 
 
 def main():
