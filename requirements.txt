@@ -1,2 +1,8 @@
+fastapi
+uvicorn[standard]
 groq==0.37.1
 python-dotenv==1.1.0
+python-jose[cryptography]
+passlib[pbkdf2]
+pydantic
+psycopg2-binary

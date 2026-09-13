@@ -1,4 +1,5 @@
 from datetime import datetime
+from app.api import app
 
 from database import (
     create_database,

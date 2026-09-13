@@ -5,3 +5,4 @@ __pycache__/
 *.py[cod]
 mobile/node_modules/
 mobile/dist/
+menstrual.db

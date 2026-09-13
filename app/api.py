@@ -38,15 +38,28 @@ from app.cycle import (
 
 app = FastAPI()
 create_database()
+cors_origins_raw = os.getenv("CORS_ORIGINS")
+if cors_origins_raw:
+    allowed_origins = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()]
+else:
+    allowed_origins = [
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:19006",
+        "http://localhost:3000",
+        "http://127.0.0.1:8081",
+        "http://127.0.0.1:8082",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8081", "http://localhost:8082"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-SECRET_KEY = os.getenv("MENSTRUAL_AGENT_SECRET", "change-this-secret-before-production")
+SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("MENSTRUAL_AGENT_SECRET", "change-this-secret-before-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 password_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
