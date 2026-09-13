@@ -1,4 +1,2 @@
 [tool.vercel]
 entrypoint = "app.api:app"git add pyproject.toml
-git commit -m "Fix Vercel Python entrypoint"
-git push
