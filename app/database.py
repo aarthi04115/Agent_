@@ -23,7 +23,8 @@ class DatabaseWrapper:
             import psycopg2
             return psycopg2.connect(self.db_url)
         else:
-            conn = sqlite3.connect("menstrual.db", timeout=30.0)
+            db_path = "/tmp/menstrual.db" if os.getenv("VERCEL") else "menstrual.db"
+            conn = sqlite3.connect(db_path, timeout=30.0)
             conn.execute("PRAGMA foreign_keys = ON")
             conn.execute("PRAGMA busy_timeout = 30000")
             return conn
@@ -229,21 +230,28 @@ def get_user_by_id(user_id):
 
 
 def save_user_period_date(user_id, start_date):
-    conn = _connect()
-    try:
-        cursor = conn.cursor()
-        if db.is_postgres():
-            query = "INSERT INTO periods (user_id, start_date) VALUES (%s, %s) ON CONFLICT (user_id, start_date) DO NOTHING"
-            cursor.execute(query, (user_id, start_date))
-            inserted = cursor.rowcount == 1
-        else:
-            query = "INSERT OR IGNORE INTO periods (user_id, start_date) VALUES (?, ?)"
-            cursor.execute(query, (user_id, start_date))
-            inserted = cursor.rowcount == 1
-        conn.commit()
-        return inserted
-    finally:
-        conn.close()
+    import time
+    for attempt in range(5):
+        try:
+            conn = _connect()
+            try:
+                cursor = conn.cursor()
+                if db.is_postgres():
+                    query = "INSERT INTO periods (user_id, start_date) VALUES (%s, %s) ON CONFLICT (user_id, start_date) DO NOTHING"
+                    cursor.execute(query, (user_id, start_date))
+                    inserted = cursor.rowcount == 1
+                else:
+                    query = "INSERT OR IGNORE INTO periods (user_id, start_date) VALUES (?, ?)"
+                    cursor.execute(query, (user_id, start_date))
+                    inserted = cursor.rowcount == 1
+                conn.commit()
+                return inserted
+            finally:
+                conn.close()
+        except sqlite3.OperationalError:
+            if attempt == 4:
+                raise
+            time.sleep(0.2)
 
 
 def get_user_period_dates(user_id):
