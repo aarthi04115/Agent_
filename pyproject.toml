@@ -1,3 +1,20 @@
+[project]
+name = "cyclecare"
+version = "0.1.0"
+description = "CycleCare Menstrual Agent API"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "groq==0.37.1",
+    "python-dotenv==1.1.0",
+    "python-jose[cryptography]",
+    "passlib[pbkdf2]",
+    "pydantic",
+    "psycopg2-binary",
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
