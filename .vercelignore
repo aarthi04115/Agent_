@@ -1,12 +1,13 @@
 pyproject.toml
 api/
+app/
+main.py
 Dockerfile
 render.yaml
+requirements.txt
 menstrual.db
-mobile/node_modules
-mobile/.expo
 tests/
 .pytest_cache
 __pycache__
-app/
-main.py
+.env
+.env.example
