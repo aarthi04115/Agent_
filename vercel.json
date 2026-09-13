@@ -1,11 +1,6 @@
 {
   "buildCommand": "cd mobile && npm install && npx expo export --platform web",
   "outputDirectory": "mobile/dist",
-  "functions": {
-    "api/index.py": {
-      "runtime": "python3.12"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
