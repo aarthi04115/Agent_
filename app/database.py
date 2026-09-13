@@ -100,6 +100,7 @@ def create_database():
             )
         """)
     else:
+        conn.execute("PRAGMA journal_mode=WAL;")
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY,
