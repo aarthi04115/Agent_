@@ -194,19 +194,28 @@ def get_period_dates():
 
 
 def create_user(name, email, password_hash, role):
-    conn = _connect()
-    cursor = conn.cursor()
-    if db.is_postgres():
-        query = "INSERT INTO users (name, email, password_hash, role) VALUES (%s, %s, %s, %s) RETURNING id"
-        cursor.execute(query, (name, email, password_hash, role))
-        user_id = cursor.fetchone()[0]
-    else:
-        query = "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)"
-        cursor.execute(query, (name, email, password_hash, role))
-        user_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return user_id
+    import time
+    for attempt in range(5):
+        try:
+            conn = _connect()
+            try:
+                cursor = conn.cursor()
+                if db.is_postgres():
+                    query = "INSERT INTO users (name, email, password_hash, role) VALUES (%s, %s, %s, %s) RETURNING id"
+                    cursor.execute(query, (name, email, password_hash, role))
+                    user_id = cursor.fetchone()[0]
+                else:
+                    query = "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)"
+                    cursor.execute(query, (name, email, password_hash, role))
+                    user_id = cursor.lastrowid
+                conn.commit()
+                return user_id
+            finally:
+                conn.close()
+        except sqlite3.OperationalError:
+            if attempt == 4:
+                raise
+            time.sleep(0.2)
 
 
 def get_user_by_email(email):
