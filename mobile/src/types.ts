@@ -1,4 +1,4 @@
-export type Role = 'user' | 'sister' | 'mom';
+export type Role = 'user' | 'mom';
 
 export type UserProfile = {
   id: number;

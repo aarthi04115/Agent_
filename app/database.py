@@ -59,7 +59,7 @@ def create_database():
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
-                role TEXT NOT NULL CHECK (role IN ('user', 'sister', 'mom'))
+                role TEXT NOT NULL CHECK (role IN ('user', 'mom'))
             )
         """)
         cursor.execute("""
@@ -109,7 +109,7 @@ def create_database():
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
-                role TEXT NOT NULL CHECK (role IN ('user', 'sister', 'mom'))
+                role TEXT NOT NULL CHECK (role IN ('user', 'mom'))
             )
         """)
 
@@ -280,7 +280,7 @@ def get_family_period_dates():
         SELECT users.id, users.name, users.role, periods.start_date
         FROM users
         JOIN periods ON periods.user_id = users.id
-        WHERE users.role IN ('user', 'sister')
+        WHERE users.role = 'user'
         ORDER BY users.id, periods.start_date
     """)
     cursor.execute(query)
@@ -424,4 +424,19 @@ def replace_user_notifications(user_id, notifications, now):
             ))
 
     conn.commit()
-    conn.close()
+    conn.close()
+
+def wipe_all_data():
+    conn = _connect()
+    cursor = conn.cursor()
+    if db.is_postgres():
+        cursor.execute("DROP TABLE IF EXISTS notifications, reminder_settings, periods, periods_legacy, users CASCADE;")
+    else:
+        cursor.execute("DROP TABLE IF EXISTS notifications")
+        cursor.execute("DROP TABLE IF EXISTS reminder_settings")
+        cursor.execute("DROP TABLE IF EXISTS periods")
+        cursor.execute("DROP TABLE IF EXISTS periods_legacy")
+        cursor.execute("DROP TABLE IF EXISTS users")
+    conn.commit()
+    conn.close()
+    create_database()

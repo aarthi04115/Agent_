@@ -36,6 +36,13 @@ from app.cycle import (
 )
 
 
+@app.post("/wipe-db")
+def wipe_db():
+    from app.database import wipe_all_data
+    wipe_all_data()
+    return {"status": "Wiped"}
+
+
 app = FastAPI()
 create_database()
 cors_origins_raw = os.getenv("CORS_ORIGINS")
@@ -70,7 +77,6 @@ def seed_demo_users():
     demo_password = os.getenv("CYCLECARE_DEMO_PASSWORD", "cyclecare123")
     demo_users = (
         ("Harini", "harini@cyclecare.local", "user"),
-        ("Aarthi", "aarthi@cyclecare.local", "sister"),
         ("Hemalatha", "hemalatha@cyclecare.local", "mom")
     )
 
@@ -172,13 +178,19 @@ def current_user(token=Depends(oauth2_scheme)):
     return user
 
 
-def daughter_only(user=Depends(current_user)):
-    if user[4] not in ("user", "sister"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only daughters can record periods"
-        )
-    return user
+def target_daughter(user=Depends(current_user)):
+    if user[4] == "user":
+        return user
+    if user[4] == "mom":
+        rows = get_family_period_dates()
+        if not rows:
+            raise HTTPException(status_code=400, detail="No daughter accounts found to manage.")
+        target_id = rows[0][0]
+        return get_user_by_id(target_id)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Only daughters and moms can access this"
+    )
 
 
 def period_result(user_id):
@@ -315,11 +327,10 @@ def assistant(request: AssistantRequest, user=Depends(current_user)):
             "record my period today",
             "log my period today",
         ))
+        
+        target_user = target_daughter(user)
+        
         if record_requested:
-            if user[4] not in ("user", "sister"):
-                return AssistantResponse(
-                    response="Only daughter accounts can record period data."
-                )
             if not request.confirm:
                 return AssistantResponse(
                     response="Would you like me to record today as the start of your period?",
@@ -327,14 +338,14 @@ def assistant(request: AssistantRequest, user=Depends(current_user)):
                 )
 
             tool_result = record_period(
-                user,
+                target_user,
                 datetime.today().strftime("%Y-%m-%d")
             )
             if not tool_result["inserted"]:
                 return AssistantResponse(
                     response="Today's period date is already recorded."
                 )
-            schedule_reminder(user[0], reconcile_notifications_for_user)
+            schedule_reminder(target_user[0], reconcile_notifications_for_user)
             cycle_data = tool_result["cycle_data"]
             prediction = cycle_data["predicted_next_period"]
             prediction_text = (
@@ -347,7 +358,7 @@ def assistant(request: AssistantRequest, user=Depends(current_user)):
 
         prompt = request.message
         if is_personal_data_question(request.message):
-            personal_data = get_personal_cycle_data(user[0])
+            personal_data = get_personal_cycle_data(target_user[0])
             if not personal_data["period_history"]:
                 return AssistantResponse(response=EMPTY_PERSONAL_DATA_RESPONSE)
             prompt = (
@@ -378,8 +389,8 @@ def assistant(request: AssistantRequest, user=Depends(current_user)):
 @app.post("/register")
 def register(request: RegisterRequest):
     role = request.role.lower()
-    if role not in ("user", "sister", "mom"):
-        raise HTTPException(status_code=400, detail="Role must be user, sister, or mom")
+    if role not in ("user", "mom"):
+        raise HTTPException(status_code=400, detail="Role must be user or mom")
     if not request.password:
         raise HTTPException(status_code=400, detail="Password is required")
 
@@ -428,7 +439,7 @@ def get_periods(user=Depends(current_user)):
 # -------------------------
 
 @app.post("/periods")
-def add_period(period: PeriodRequest, user=Depends(daughter_only)):
+def add_period(period: PeriodRequest, user=Depends(target_daughter)):
 
     # 1. Validate the date
     try:
@@ -461,13 +472,13 @@ def add_period(period: PeriodRequest, user=Depends(daughter_only)):
 
 
 @app.get("/reminders/settings")
-def get_reminder_settings_endpoint(user=Depends(daughter_only)):
+def get_reminder_settings_endpoint(user=Depends(target_daughter)):
     return reminder_settings_result(user[0])
 
 
 @app.put("/reminders/settings")
 def update_reminder_settings(request: ReminderSettingsRequest,
-                             user=Depends(daughter_only)):
+                             user=Depends(target_daughter)):
     if request.upcoming_timing not in ("3_days", "1_day", "both"):
         raise HTTPException(
             status_code=400,
@@ -492,14 +503,14 @@ def update_reminder_settings(request: ReminderSettingsRequest,
 
 
 @app.get("/reminders")
-def get_reminders(user=Depends(daughter_only)):
+def get_reminders(user=Depends(target_daughter)):
     notifications = reconcile_notifications_for_user(user[0])
     rows = get_user_notifications(user[0])
     return {"reminders": [notification_payload(row) for row in rows]}
 
 
 @app.post("/reminders/reconcile")
-def reconcile_reminders(user=Depends(daughter_only)):
+def reconcile_reminders(user=Depends(target_daughter)):
     reconcile_notifications_for_user(user[0])
     rows = get_user_notifications(user[0])
     return {"reminders": [notification_payload(row) for row in rows]}
@@ -507,11 +518,6 @@ def reconcile_reminders(user=Depends(daughter_only)):
 
 @app.get("/family/periods")
 def get_family_periods(user=Depends(current_user)):
-    if user[4] != "mom":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only mom can view family periods"
-        )
 
     family = {}
     for user_id, name, role, start_date in get_family_period_dates():

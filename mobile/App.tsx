@@ -42,10 +42,10 @@ function AppContent() {
   else if (tab === 'calendar') screen = <CalendarScreen onNavigate={navigate} />;
   else if (tab === 'history') screen = <HistoryScreen onNavigate={navigate} />;
   else if (tab === 'family') screen = <FamilyScreen onNavigate={navigate} onProfile={profile} />;
-  else if (tab === 'record' && user.role !== 'mom') screen = <RecordScreen onNavigate={navigate} />;
-  else if (tab === 'settings' && user.role !== 'mom') screen = <ReminderSettingsScreen onNavigate={navigate} />;
+  else if (tab === 'record') screen = <RecordScreen onNavigate={navigate} />;
+  else if (tab === 'settings') screen = <ReminderSettingsScreen onNavigate={navigate} />;
   else screen = <AssistantScreen onNavigate={navigate} />;
-  return <><View style={{ flex: 1 }}>{screen}{profileOpen && <View style={app.overlay}><View style={app.sheet}><Text style={app.sheetTitle}>{user.name}</Text><Text style={app.sheetEmail}>{user.email}</Text><Text style={app.sheetRole}>{user.role === 'mom' ? 'Mother • read-only family access' : 'Personal cycle account'}</Text>{user.role !== 'mom' && <Pressable onPress={() => { setProfileOpen(false); setTab('settings'); }} style={app.settings}><Text style={app.settingsText}>Reminder settings</Text></Pressable>}<Pressable onPress={() => { setProfileOpen(false); logout(); }} style={app.logout}><Text style={app.logoutText}>Log out</Text></Pressable><Pressable onPress={() => setProfileOpen(false)} style={app.close}><Text style={app.closeText}>Close</Text></Pressable></View></View>}</View><StatusBar style="dark" /></>;
+  return <><View style={{ flex: 1 }}>{screen}{profileOpen && <View style={app.overlay}><View style={app.sheet}><Text style={app.sheetTitle}>{user.name}</Text><Text style={app.sheetEmail}>{user.email}</Text><Text style={app.sheetRole}>{user.role === 'mom' ? 'Mother • manages family cycle' : 'Personal cycle account'}</Text><Pressable onPress={() => { setProfileOpen(false); setTab('settings'); }} style={app.settings}><Text style={app.settingsText}>Reminder settings</Text></Pressable><Pressable onPress={() => { setProfileOpen(false); logout(); }} style={app.logout}><Text style={app.logoutText}>Log out</Text></Pressable><Pressable onPress={() => setProfileOpen(false)} style={app.close}><Text style={app.closeText}>Close</Text></Pressable></View></View>}</View><StatusBar style="dark" /></>;
 }
 
 export default function App() { return <AuthProvider><AppContent /></AuthProvider>; }
