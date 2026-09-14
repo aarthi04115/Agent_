@@ -36,15 +36,14 @@ from app.cycle import (
 )
 
 
+app = FastAPI()
+create_database()
+
 @app.post("/wipe-db")
 def wipe_db():
     from app.database import wipe_all_data
     wipe_all_data()
     return {"status": "Wiped"}
-
-
-app = FastAPI()
-create_database()
 cors_origins_raw = os.getenv("CORS_ORIGINS")
 if cors_origins_raw:
     allowed_origins = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()]
