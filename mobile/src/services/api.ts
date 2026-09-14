@@ -1,6 +1,6 @@
 import { AddPeriodResponse, AssistantResponse, FamilyResponse, PeriodResponse, Reminder, ReminderSettings, Role, UserProfile } from '../types';
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://agent-viu3.onrender.com";
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://agent-e225.onrender.com";
 type LoginResponse = { access_token: string; token_type: string; user: UserProfile };
 type RegisterResponse = UserProfile;
 
